@@ -55,6 +55,8 @@ export namespace Agent {
         "*": "ask",
         [Truncate.DIR]: "allow",
         [Truncate.GLOB]: "allow",
+        // Allow reading from remote-skills cache directory
+        [path.join(Global.Path.remoteSkills, "**")]: "allow",
       },
       question: "deny",
       plan_enter: "deny",
@@ -65,6 +67,11 @@ export namespace Agent {
         "*.env": "ask",
         "*.env.*": "ask",
         "*.env.example": "allow",
+      },
+      // Deny writing to the remote-skills cache directory
+      edit: {
+        "*": "allow",
+        [path.join(Global.Path.remoteSkills, "**")]: "deny",
       },
     })
     const user = PermissionNext.fromConfig(cfg.permission ?? {})

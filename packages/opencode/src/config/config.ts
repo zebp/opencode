@@ -1088,6 +1088,10 @@ export namespace Config {
             .describe("Timeout in milliseconds for model context protocol (MCP) requests"),
         })
         .optional(),
+      trustedDomains: z
+        .array(z.string())
+        .optional()
+        .describe("List of trusted domains for loading remote skills without permission prompts"),
     })
     .strict()
     .meta({

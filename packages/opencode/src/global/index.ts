@@ -19,6 +19,7 @@ export namespace Global {
     data,
     bin: path.join(data, "bin"),
     log: path.join(data, "log"),
+    remoteSkills: path.join(data, "remote-skills"),
     cache,
     config,
     state,
@@ -35,6 +36,7 @@ await Promise.all([
   fs.mkdir(Global.Path.state, { recursive: true }),
   fs.mkdir(Global.Path.log, { recursive: true }),
   fs.mkdir(Global.Path.bin, { recursive: true }),
+  fs.mkdir(Global.Path.remoteSkills, { recursive: true }),
 ])
 
 const CACHE_VERSION = "18"

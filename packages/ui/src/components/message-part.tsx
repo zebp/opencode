@@ -260,6 +260,15 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
         icon: "bubble-5",
         title: i18n.t("ui.tool.questions"),
       }
+    case "remote-skill": {
+      const action = input.action || "list"
+      const subtitle = action === "list" ? input.domain : `${input.domain}/${input.skill}`
+      return {
+        icon: "server",
+        title: `remote-skill (${action})`,
+        subtitle,
+      }
+    }
     default:
       return {
         icon: "mcp",
@@ -1288,6 +1297,26 @@ ToolRegistry.register({
           </div>
         </Show>
       </BasicTool>
+    )
+  },
+})
+
+ToolRegistry.register({
+  name: "remote-skill",
+  render(props) {
+    const action = () => props.input.action || "list"
+    const subtitle = () =>
+      action() === "list" ? `list ${props.input.domain}` : `load ${props.input.domain}:${props.input.skill}`
+
+    return (
+      <BasicTool
+        {...props}
+        icon="server"
+        trigger={{
+          title: "remote-skill",
+          subtitle: subtitle(),
+        }}
+      />
     )
   },
 })

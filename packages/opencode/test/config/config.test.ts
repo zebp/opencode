@@ -1349,6 +1349,70 @@ describe("getPluginName", () => {
   })
 })
 
+describe("trustedDomains", () => {
+  test("loads trustedDomains from config", async () => {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        await Bun.write(
+          path.join(dir, "opencode.json"),
+          JSON.stringify({
+            $schema: "https://opencode.ai/config.json",
+            trustedDomains: ["example.com", "cloudflare.com", "skills.mycompany.io"],
+          }),
+        )
+      },
+    })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await Config.get()
+        expect(config.trustedDomains).toEqual(["example.com", "cloudflare.com", "skills.mycompany.io"])
+      },
+    })
+  })
+
+  test("trustedDomains defaults to undefined when not set", async () => {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        await Bun.write(
+          path.join(dir, "opencode.json"),
+          JSON.stringify({
+            $schema: "https://opencode.ai/config.json",
+          }),
+        )
+      },
+    })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await Config.get()
+        expect(config.trustedDomains).toBeUndefined()
+      },
+    })
+  })
+
+  test("trustedDomains accepts empty array", async () => {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        await Bun.write(
+          path.join(dir, "opencode.json"),
+          JSON.stringify({
+            $schema: "https://opencode.ai/config.json",
+            trustedDomains: [],
+          }),
+        )
+      },
+    })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await Config.get()
+        expect(config.trustedDomains).toEqual([])
+      },
+    })
+  })
+})
+
 describe("deduplicatePlugins", () => {
   test("removes duplicates keeping higher priority (later entries)", () => {
     const plugins = ["global-plugin@1.0.0", "shared-plugin@1.0.0", "local-plugin@2.0.0", "shared-plugin@2.0.0"]

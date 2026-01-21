@@ -1,8 +1,10 @@
 import { test, expect } from "bun:test"
+import path from "path"
 import { tmpdir } from "../fixture/fixture"
 import { Instance } from "../../src/project/instance"
 import { Agent } from "../../src/agent/agent"
 import { PermissionNext } from "../../src/permission/next"
+import { Global } from "../../src/global"
 
 // Helper to evaluate permission for a tool with wildcard pattern
 function evalPerm(agent: Agent.Info | undefined, permission: string): PermissionNext.Action | undefined {
@@ -633,6 +635,62 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
     fn: async () => {
       // build and plan are disabled, no primary-capable agents remain
       await expect(Agent.defaultAgent()).rejects.toThrow("no primary visible agent found")
+    },
+  })
+})
+
+test("remote-skills cache directory is allowed for external_directory", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const build = await Agent.get("build")
+      const cachePath = path.join(Global.Path.remoteSkills, "example.com", "my-skill", "*")
+      expect(PermissionNext.evaluate("external_directory", cachePath, build!.permission).action).toBe("allow")
+    },
+  })
+})
+
+test("remote-skills cache directory denies edit operations", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const build = await Agent.get("build")
+      const cachePath = path.join(Global.Path.remoteSkills, "example.com", "my-skill", "SKILL.md")
+      expect(PermissionNext.evaluate("edit", cachePath, build!.permission).action).toBe("deny")
+    },
+  })
+})
+
+test("read is allowed for remote-skills cache directory", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const build = await Agent.get("build")
+      const cachePath = path.join(Global.Path.remoteSkills, "example.com", "my-skill", "SKILL.md")
+      // read: "*" is already allow, so this should be allowed
+      expect(PermissionNext.evaluate("read", cachePath, build!.permission).action).toBe("allow")
+    },
+  })
+})
+
+test("remote-skills cache edit deny applies to all agents", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const agents = await Agent.list()
+      const cachePath = path.join(Global.Path.remoteSkills, "cloudflare.com", "wrangler", "scripts", "deploy.sh")
+
+      for (const agent of agents) {
+        // Skip agents that deny all operations (like compaction, title, summary)
+        const allDeny = PermissionNext.evaluate("edit", "*", agent.permission).action === "deny"
+        if (allDeny) continue
+
+        expect(PermissionNext.evaluate("edit", cachePath, agent.permission).action).toBe("deny")
+      }
     },
   })
 })
